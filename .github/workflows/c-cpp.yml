@@ -1,40 +1,18 @@
-name: Build rtl8188eu Kernel Module
+name: Build rtl8188eu
 
-on:
-  push:
-    branches: [ master, main ]
-  pull_request:
-    branches: [ master, main ]
-  workflow_dispatch:
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Repository
+    - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Build Environment
+    - name: Download Kernel Source
       run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential libncurses-dev bison flex libssl-dev bc
+        git clone --depth=1 -b android-7.0 https://github.com/exynos7870/android_kernel_samsung_exynos7870.git kernel_src
 
-    - name: Download Kernel Source (Universal7870 / Kernel 3.18)
+    - name: Build driver
       run: |
-        # Samsung Galaxy J7 Core အတွက် လိုအပ်သော Kernel Source ကို ဒေါင်းလုဒ်ဆွဲခြင်းနှင့် ဖြည်ချခြင်း
-        git clone --depth=1 -b android-7.0 https://github.com/exynos7870/android_kernel_samsung_exynos7870.git kernel_src || mkdir -p kernel_src
-
-    - name: Compile rtl8188eu Module
-      run: |
-        cd $GITHUB_WORKSPACE
-        # Makefile ထဲတွင် သင့်လျော်သော Architecture နှင့် Cross Compiler ကို သတ်မှတ်၍ Build လုပ်ခြင်း
-        make ARCH=arm CROSS_COMPILE=arm-linux-androideabi- KSRC=$GITHUB_WORKSPACE/kernel_src modules || make
-
-    - name: Upload Compiled .ko Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: rtl8188eu-ko-file
-        path: |
-          *.ko
-          **/8188eu.ko
+        make ARCH=arm CROSS_COMPILE=arm-linux-androideabi- KSRC=$GITHUB_WORKSPACE/kernel_src modules
